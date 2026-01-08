@@ -4,6 +4,12 @@ from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext_lazy as _
 
 
+def index(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return redirect('login')
+
+
 def login_view(request):
     from django.conf import settings
     return render(request, 'login.html', {
