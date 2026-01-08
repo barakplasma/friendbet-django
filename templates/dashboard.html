@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h2>{% translate "Dashboard" %}</h2>
+        <p class="subtitle">{% translate "Welcome to FriendBet" %}</p>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="welcome-card">
+            <h3>{% translate "Getting Started" %}</h3>
+            <p>{% translate "FriendBet is a private prediction market platform for friend groups. Admins can create markets and members can place bets on outcomes using points." %}</p>
+
+            <div class="features">
+                <div class="feature">
+                    <h4>{% translate "Private Groups" %}</h4>
+                    <p>{% translate "Admin-controlled groups ensure curated participation" %}</p>
+                </div>
+
+                <div class="feature">
+                    <h4>{% translate "Time-Stacked Betting" %}</h4>
+                    <p>{% translate "Place bets on multiple deadline dates for more nuanced predictions" %}</p>
+                </div>
+
+                <div class="feature">
+                    <h4>{% translate "Private Betting" %}</h4>
+                    <p>{% translate "Your individual bets remain confidential to ensure unbiased predictions" %}</p>
+                </div>
+            </div>
+
+            <div class="coming-soon">
+                <p><strong>{% translate "Coming Soon:" %}</strong></p>
+                <ul>
+                    <li>{% translate "Market creation and management" %}</li>
+                    <li>{% translate "Betting interface with real-time odds" %}</li>
+                    <li>{% translate "Group leaderboards and statistics" %}</li>
+                    <li>{% translate "Invite system for group members" %}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

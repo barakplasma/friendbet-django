@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: friendbet
+data:
+  POSTGRES_DB: friendbet
+  POSTGRES_USER: friendbet
+  POSTGRES_HOST: postgres-service
+  POSTGRES_PORT: "5432"

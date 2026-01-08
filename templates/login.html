@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <h2>{% translate "Login to FriendBet" %}</h2>
+        <p>{% translate "Private prediction markets for friend groups" %}</p>
+
+        <div class="oauth-buttons">
+            {% if google_oauth2_key %}
+            <a href="{% url 'social:begin' 'google-oauth2' %}" class="btn btn-google">
+                {% translate "Login with Google" %}
+            </a>
+            {% endif %}
+
+            {% if github_key %}
+            <a href="{% url 'social:begin' 'github' %}" class="btn btn-github">
+                {% translate "Login with GitHub" %}
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="language-selector">
+            <h3>{% translate "Select Language" %}</h3>
+            <a href="{% url 'set_language' 'en' %}" class="btn btn-language">English</a>
+            <a href="{% url 'set_language' 'he' %}" class="btn btn-language">עברית</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

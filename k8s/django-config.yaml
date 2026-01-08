@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-config
+  namespace: friendbet
+data:
+  DJANGO_ALLOWED_HOSTS: ".526462738.xyz,friendbet.526462738.xyz"
+  DJANGO_DEBUG: "False"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"

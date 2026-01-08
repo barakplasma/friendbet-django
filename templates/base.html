@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE }}" dir="{% if request.LANGUAGE_CODE == 'he' %}rtl{% else %}ltr{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% translate "FriendBet - Private Prediction Markets" %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>FriendBet</h1>
+            </div>
+            <div class="nav-menu">
+                {% if user.is_authenticated %}
+                    <span>{% translate "Welcome" %} {{ user.username }}</span>
+                    <a href="{% url 'logout' %}">{% translate "Logout" %}</a>
+                {% else %}
+                    <a href="{% url 'set_language' 'en' %}">English</a>
+                    <a href="{% url 'set_language' 'he' %}">עברית</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 FriendBet. {% translate "Private prediction markets for friend groups." %}</p>
+        </div>
+    </footer>
+</body>
+</html>

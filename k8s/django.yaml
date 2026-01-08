@@ -1,0 +1,166 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django
+  namespace: friendbet
+  labels:
+    app: django
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      initContainers:
+      - name: migrate
+        image: friendbet:latest
+        command: ["python", "manage.py", "migrate", "--noinput"]
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_HOST
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_PORT
+        - name: DJANGO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: django-secret
+              key: DJANGO_SECRET_KEY
+        - name: DJANGO_ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: django-config
+              key: DJANGO_ALLOWED_HOSTS
+        - name: DJANGO_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: django-config
+              key: DJANGO_DEBUG
+      containers:
+      - name: django
+        image: friendbet:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_HOST
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_PORT
+        - name: DJANGO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: django-secret
+              key: DJANGO_SECRET_KEY
+        - name: DJANGO_ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: django-config
+              key: DJANGO_ALLOWED_HOSTS
+        - name: DJANGO_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: django-config
+              key: DJANGO_DEBUG
+        - name: OAUTH_GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: django-secret
+              key: OAUTH_GOOGLE_CLIENT_ID
+        - name: OAUTH_GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: django-secret
+              key: OAUTH_GOOGLE_CLIENT_SECRET
+        - name: OAUTH_GITHUB_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: django-secret
+              key: OAUTH_GITHUB_CLIENT_ID
+        - name: OAUTH_GITHUB_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: django-secret
+              key: OAUTH_GITHUB_CLIENT_SECRET
+        volumeMounts:
+        - name: media-storage
+          mountPath: /app/media
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: django-media-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-service
+  namespace: friendbet
+spec:
+  selector:
+    app: django
+  ports:
+  - port: 8000
+    targetPort: 8000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: django-media-pvc
+  namespace: friendbet
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
