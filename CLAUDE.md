@@ -162,239 +162,116 @@ Friend groups want to make friendly predictions and bets on personal or world ev
 
 ## Technical Requirements
 
-### Recommended Backend-as-a-Service: **PocketBase**
-
-**Rationale:**
-- ✅ **Single binary deployment** - easiest self-hosting (just upload one file)
-- ✅ **Built-in SQLite** - no separate database server needed
-- ✅ **Built-in OAuth** - Google, GitHub, Microsoft supported out of box
-- ✅ **Real-time subscriptions** - WebSocket support for live odds updates
-- ✅ **Built-in admin UI** - manage data without custom admin panel
-- ✅ **File storage** - for user avatars (local filesystem)
-- ✅ **Backup = copy one file** - SQLite database is portable
-- ✅ **Custom business logic** - extend with Go or JavaScript hooks
-- ✅ **Zero cloud dependencies** - everything runs on your VPS
-- ✅ **Automatic REST + Realtime API** - less backend code to write
-
-**Alternative Considered:**
-- **Directus**: More complex, requires separate PostgreSQL/MySQL, heavier infrastructure
-- **Convex**: Cloud-only service, not self-hostable
-- **Supabase**: Can self-host but more complex (PostgreSQL, PostgREST, GoTrue, etc.)
-
-**PocketBase is the clear winner for simple VPS self-hosting.**
-
-### Recommended Frontend Framework: **Angular 17+ (Standalone Components)**
-
-**Rationale:**
-- ✅ **Standalone components** - simpler, no NgModules needed (Angular 17+)
-- ✅ **Built-in i18n** - excellent internationalization support
-- ✅ **Material UI** - mature, comprehensive component library
-- ✅ **Strong typing** - TypeScript throughout
-- ✅ **Built-in routing** - no additional library needed
-- ✅ **Signals (Angular 16+)** - modern reactivity for real-time odds
-- ✅ **Build optimization** - good production bundle sizes
-- ✅ **RTL support** - Material UI has excellent RTL/BiDi support
-
-**Angular Standalone Components API** eliminates much of Angular's traditional complexity while keeping its strengths.
-
-### Architecture
+### Architecture Requirements
 
 **Single VPS Deployment:**
 ```
 VPS (Ubuntu/Debian)
-├── PocketBase binary (backend + database)
-├── Angular dist/ (static files served by PocketBase)
-├── pb_data/ (SQLite database + avatars)
-└── Nginx (optional reverse proxy)
+├── Backend application + database
+├── Frontend static files
+├── Data storage (database + avatars)
+└── Web server / reverse proxy
 ```
 
-**Tech Stack:**
-- **Backend:** PocketBase (Go-based, single binary)
-- **Database:** SQLite (embedded in PocketBase)
-- **Frontend:** Angular 17+ Standalone Components
-- **UI Library:** Angular Material 17+
-- **Authentication:** PocketBase OAuth (Google, GitHub, Microsoft)
-- **Real-time:** PocketBase WebSocket subscriptions
-- **Hosting:** Single VPS (DigitalOcean, Linode, Hetzner, etc.)
-- **Web Server:** PocketBase built-in server (or Nginx reverse proxy)
+### Database Schema
 
-### PocketBase Collections (Database Schema)
-
-**users** (built-in collection, extended):
-```
-username, email, avatar, preferred_language (he/en), 
-oauth2_provider, created, updated
-```
+**users:**
+- id, username, email, avatar, preferred_language (he/en)
+- oauth2_provider, created, updated
 
 **groups:**
-```
-id, name, admin_ids (relation[users]), default_language, created
-```
+- id, name, admin_ids (array of user ids), default_language, created
 
 **group_memberships:**
-```
-id, user_id (relation[users]), group_id (relation[groups]), 
-points_balance (number), joined_at (date)
-```
+- id, user_id (foreign key), group_id (foreign key)
+- points_balance (number), joined_at (date)
 
 **invite_codes:**
-```
-id, group_id (relation[groups]), code (text, unique), 
-email (email, optional), used (bool), 
-created_by (relation[users]), created, used_at (date), 
-used_by (relation[users])
-```
+- id, group_id (foreign key), code (text, unique)
+- email (email, optional), used (boolean)
+- created_by (foreign key), created, used_at (date), used_by (foreign key)
 
 **markets:**
-```
-id, group_id (relation[groups]), creator_id (relation[users]), 
-resolver_id (relation[users]), title (text), description (text), 
-resolution_criteria (text), deadline_dates (json), 
-close_date (date), status (select: draft/active/closed/resolved), 
-resolution (select: yes/no/cancelled), resolution_date (date),
-resolved_at (date), content_language (select: he/en), created
-```
+- id, group_id (foreign key), creator_id (foreign key)
+- resolver_id (foreign key), title (text), description (text)
+- resolution_criteria (text), deadline_dates (json/array)
+- close_date (date), status (enum: draft/active/closed/resolved)
+- resolution (enum: yes/no/cancelled), resolution_date (date)
+- resolved_at (date), content_language (enum: he/en), created
 
 **bets:**
-```
-id, market_id (relation[markets]), user_id (relation[users]), 
-deadline_date (date), outcome (select: yes/no), amount (number), 
-shares_received (number), created
-```
+- id, market_id (foreign key), user_id (foreign key)
+- deadline_date (date), outcome (enum: yes/no), amount (number)
+- shares_received (number), created
 
 **transactions:**
-```
-id, user_id (relation[users]), group_id (relation[groups]), 
-amount (number), type (select: bet/win/loss/stipend/adjustment), 
-related_market_id (relation[markets]), 
-related_deadline_date (date), created
-```
+- id, user_id (foreign key), group_id (foreign key)
+- amount (number), type (enum: bet/win/loss/stipend/adjustment)
+- related_market_id (foreign key), related_deadline_date (date), created
 
-### PocketBase Custom Business Logic
+### Business Logic Requirements
 
-**Hooks needed (JavaScript or Go extensions):**
+**Core algorithms needed:**
 1. **AMM calculation** - calculate odds and shares when bet placed
 2. **Market resolution** - calculate all payouts when market resolved
-3. **Stipend cron job** - periodic point distribution
+3. **Stipend distribution** - periodic point distribution to users
 4. **Bet privacy enforcement** - hide bet details from non-admins
 5. **Invite code validation** - one-time use enforcement
 6. **Admin permission checks** - verify admin status for protected actions
 
-### Authentication
-- **PocketBase OAuth 2.0** (built-in)
-- Supported providers: Google, GitHub, Microsoft
-- Configured via PocketBase admin UI
-- JWT-based session management (handled by PocketBase)
+### Authentication Requirements
+- OAuth 2.0 authentication (Google, GitHub, Microsoft providers)
+- JWT-based session management
 - Automatic account linking by email
+- Secure session handling
 
-### Real-time Updates
-- **PocketBase real-time subscriptions** via WebSocket
+### Real-time Updates Requirements
+- WebSocket support for live updates
 - Subscribe to market odds changes
 - Subscribe to leaderboard updates
-- Angular Signals for reactive UI updates
+- Reactive UI updates
 
-### Deployment & Self-Hosting
+### Deployment Requirements
 
-**Initial Setup (15 minutes):**
-```bash
-# 1. Download PocketBase
-wget https://github.com/pocketbase/pocketbase/releases/download/v0.x.x/pocketbase_linux_amd64.zip
-unzip pocketbase_linux_amd64.zip
+**Initial Setup:**
+- Simple installation process (under 30 minutes target)
+- Single VPS capable of running full stack
+- Minimal configuration required
 
-# 2. Run PocketBase
-./pocketbase serve --http="0.0.0.0:8080"
-
-# 3. Access admin UI
-# Open http://your-vps-ip:8080/_/
-# Create admin account, configure OAuth providers
-
-# 4. Build Angular app
-ng build --configuration production
-
-# 5. Copy dist to PocketBase pb_public
-cp -r dist/friendbet/* pb_public/
-
-# 6. Restart PocketBase
-./pocketbase serve
-```
-
-**Production Setup (with Nginx):**
-```nginx
-server {
-    listen 80;
-    server_name friendbet.yourdomain.com;
-    
-    location / {
-        proxy_pass http://localhost:8090;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-**Systemd Service:**
-```ini
-[Unit]
-Description=FriendBet PocketBase
-After=network.target
-
-[Service]
-Type=simple
-User=pocketbase
-WorkingDirectory=/opt/friendbet
-ExecStart=/opt/friendbet/pocketbase serve
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
+**Production Setup:**
+- Web server or reverse proxy configuration
+- Process management (systemd or similar)
+- SSL/HTTPS support
+- Automated backup system
 
 **Backup Strategy:**
-```bash
-# Backup entire database (single file)
-cp pb_data/data.db backups/data-$(date +%Y%m%d).db
+- Database backup automation
+- Easy restore process
+- Minimal downtime during backups
 
-# Or use PocketBase backup command
-./pocketbase backup backup.zip
+### Security & Privacy Requirements
+- OAuth-only authentication
+- Role-based access control (admin vs user)
+- Privacy rules for bet visibility
+- HTTPS/TLS encryption
+- Rate limiting
+- Audit logging
+- Secure environment variable handling
 
-# Automated daily backups
-0 2 * * * /opt/friendbet/backup.sh
-```
+### Internationalization (i18n) Requirements
 
-### Security & Privacy
-- OAuth-only authentication (via PocketBase)
-- Collection-level rules in PocketBase for bet privacy
-- Admin-only API rules for viewing bet details
-- HTTPS via Let's Encrypt (Certbot)
-- Rate limiting via Nginx
-- PocketBase audit logging (built-in)
-- Environment variables for OAuth secrets
+**UI Localization:**
+- Full translation support for Hebrew and English
+- Runtime language switching capability
+- Translation files for UI strings
+- User-created content stored in original language (not translated)
 
-### Internationalization (i18n)
-
-**Angular i18n Implementation:**
-```typescript
-// Compile-time i18n (Angular native)
-// Two separate builds: one for Hebrew, one for English
-ng build --configuration production,en
-ng build --configuration production,he
-
-// Or runtime i18n (using @angular/localize + custom loader)
-// Single build, runtime language switching
-```
-
-**Translation Files:**
-- `src/locale/messages.en.xlf` (English UI strings)
-- `src/locale/messages.he.xlf` (Hebrew UI strings)
-- Market content NOT translated (stored as-is)
-
-**Language Switching:**
-```typescript
-// User preference stored in PocketBase users collection
-// On login, load user's preferred_language
-// Set Angular LOCALE_ID dynamically
-// Apply dir="rtl" or dir="ltr" to <html> tag
-```
+**Language Handling:**
+- User preference storage
+- Dynamic locale switching
+- RTL/LTR text direction support
+- BiDi (Bidirectional) text handling
+- Locale-specific date/time formatting
 
 ## UI/UX Requirements
 
@@ -407,28 +284,27 @@ ng build --configuration production,he
 6. **Profile:** Personal stats, private betting history, UI language settings
 7. **Admin Panel:** Full betting visibility, resolution oversight, point management
 
-### Angular Material Components
-- `mat-card` for market cards
-- `mat-table` for leaderboards and bet history
-- `mat-form-field` for all inputs
-- `mat-button`, `mat-raised-button`, `mat-fab`
-- `mat-toolbar` for navigation
-- `mat-sidenav` for admin panel
-- `mat-tabs` for deadline selection in betting
-- `mat-chip` for deadline badges and language indicators
-- `mat-dialog` for confirmations
-- `mat-expansion-panel` for market details
-- `mat-select` for language switching
-- `mat-badge` for language indicators on markets
+### UI Components
+- Card-based layout for markets
+- Table views for leaderboards and bet history
+- Form fields for all inputs
+- Buttons and navigation elements
+- Toolbar for navigation
+- Panel-based admin interface
+- Tab-based deadline selection in betting
+- Badge/chip elements for deadline and language indicators
+- Dialog modals for confirmations
+- Expandable panels for market details
+- Language selection interface
 
 ### Design Principles
 - **Desktop-first:** Optimized for 1920x1080 and 1366x768
-- **Material Design 3** guidelines
+- Modern design guidelines
 - Clear odds display per deadline
 - Prominent privacy indicators
 - Time-stacked betting UI clearly shows multiple deadlines
 - Clean, minimal aesthetic - no social elements
-- Real-time updates via PocketBase subscriptions
+- Real-time updates for odds and leaderboards
 - Responsive down to 768px
 - **Full RTL support** - UI mirrors completely for Hebrew
 - **Language badge on markets** showing content language
@@ -438,7 +314,6 @@ ng build --configuration production,he
 - Automatic UI direction switching based on selected language
 - UI layout mirroring for RTL (navigation, buttons, forms)
 - Market content displays in original direction (BiDi handling)
-- Material UI's CDK Bidi module
 - Test with mixed Hebrew/English content
 
 ## Success Metrics
@@ -472,37 +347,26 @@ ng build --configuration production,he
 - **OS:** Ubuntu 22.04 or Debian 11+
 - **Cost:** ~$5-10/month (DigitalOcean, Linode, Hetzner)
 
-### Installation Guide (Included)
+### Installation Guide Requirements
 1. VPS setup and security (SSH keys, firewall)
-2. PocketBase installation and configuration
+2. Backend installation and configuration
 3. OAuth provider setup (Google, GitHub, Microsoft)
-4. Angular build and deployment
-5. Nginx reverse proxy setup
+4. Frontend build and deployment
+5. Web server/reverse proxy setup
 6. SSL certificate (Let's Encrypt)
 7. Automated backups setup
-8. Systemd service configuration
+8. Process management configuration
 9. Monitoring and maintenance
 
-### Backup & Restore
-```bash
-# Backup (automated daily)
-./pocketbase backup backup-$(date +%Y%m%d).zip
+### Backup & Restore Requirements
+- Automated daily backup process
+- Simple restore procedure
+- Minimal downtime during backup operations
 
-# Restore
-unzip backup-20260108.zip -d pb_data_restore/
-./pocketbase serve --dir=pb_data_restore
-```
-
-### Updates
-```bash
-# Update PocketBase
-wget [new version]
-./pocketbase update
-
-# Update Angular app
-ng build --prod
-rsync -av dist/friendbet/ user@vps:/opt/friendbet/pb_public/
-```
+### Update Requirements
+- Simple update process for backend
+- Simple deployment process for frontend updates
+- Zero-downtime updates preferred
 
 ## Out of Scope (V1)
 - Real money transactions
