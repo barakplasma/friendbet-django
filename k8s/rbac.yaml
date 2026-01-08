@@ -1,0 +1,127 @@
+# FriendBet RBAC Configuration
+# Defines roles, service accounts, and permissions for secure Kubernetes deployment
+
+---
+# Service Account for FriendBet
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: friendbet
+  namespace: friendbet
+  labels:
+    app: friendbet
+  annotations:
+    description: "Service account for FriendBet application pods"
+
+---
+# Role for FriendBet pod operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: friendbet
+  namespace: friendbet
+  labels:
+    app: friendbet
+rules:
+  # Allow reading configmaps and secrets
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list"]
+
+  # Allow creating and managing pods for backup operations
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "create", "delete"]
+
+  # Allow managing persistent volume claims
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list"]
+
+---
+# ClusterRole for cluster-wide operations (minimal permissions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: friendbet
+  labels:
+    app: friendbet
+rules:
+  # Allow reading node information for multi-pod awareness
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for FriendBet
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: friendbet
+  namespace: friendbet
+  labels:
+    app: friendbet
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: friendbet
+subjects:
+  - kind: ServiceAccount
+    name: friendbet
+    namespace: friendbet
+
+---
+# ClusterRoleBinding for FriendBet (if needed)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: friendbet
+  labels:
+    app: friendbet
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: friendbet
+subjects:
+  - kind: ServiceAccount
+    name: friendbet
+    namespace: friendbet
+
+---
+# Pod Security Policy (if using PSPs in your cluster)
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: friendbet
+  labels:
+    app: friendbet
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfiles: 'runtime/default'
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'secret'
+    - 'persistentVolumeClaim'
+    - 'emptyDir'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 65535
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 65535
+  readOnlyRootFilesystem: false

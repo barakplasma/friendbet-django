@@ -1,0 +1,14 @@
+apiVersion: v2
+name: friendbet
+description: A Helm chart for FriendBet prediction market platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - prediction market
+  - betting
+  - pocketbase
+  - angular
+maintainers:
+  - name: FriendBet Team
+home: https://friendbet.526462738.xyz

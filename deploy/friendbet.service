@@ -1,0 +1,40 @@
+[Unit]
+Description=FriendBet PocketBase Service
+Documentation=https://pocketbase.io/docs/
+After=network.target
+
+[Service]
+Type=simple
+User=friendbet
+Group=friendbet
+WorkingDirectory=/opt/friendbet
+
+# Start PocketBase on port 8090, listening on all interfaces
+ExecStart=/opt/friendbet/pocketbase serve --http=0.0.0.0:8090
+
+# Auto-restart configuration
+Restart=on-failure
+RestartSec=5s
+
+# Logging configuration
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=friendbet
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/friendbet
+
+# Resource limits
+LimitNOFILE=65536
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

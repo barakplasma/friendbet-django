@@ -1,0 +1,144 @@
+# FriendBet Network Policy
+# Defines network traffic rules for secure pod-to-pod communication
+
+---
+# Network Policy to restrict FriendBet traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: friendbet
+  namespace: friendbet
+  labels:
+    app: friendbet
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: friendbet
+  policyTypes:
+  - Ingress
+  - Egress
+
+  # Ingress rules - allow traffic from specific sources
+  ingress:
+  # Allow traffic from Cloudflare tunnel
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: friendbet
+      podSelector:
+        matchLabels:
+          component: cloudflare-tunnel
+    ports:
+    - protocol: TCP
+      port: 8090
+
+  # Allow traffic from ingress controllers (Traefik, NGINX, etc.)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: traefik
+    ports:
+    - protocol: TCP
+      port: 8090
+
+  # Allow traffic from monitoring systems (Prometheus, etc.)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8090
+
+  # Allow health checks from within the same namespace
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8090
+
+  # Egress rules - allow specific outbound traffic
+  egress:
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+  # Allow traffic to external OAuth providers (Google, GitHub, Microsoft)
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+
+  # Allow traffic to Kubernetes API server
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: default
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# Network Policy for Cloudflare Tunnel
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cloudflare-tunnel
+  namespace: friendbet
+  labels:
+    app: friendbet
+    component: cloudflare-tunnel
+spec:
+  podSelector:
+    matchLabels:
+      app: friendbet
+      component: cloudflare-tunnel
+  policyTypes:
+  - Ingress
+  - Egress
+
+  ingress:
+  # Allow metrics scraping
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 2000
+
+  egress:
+  # Allow traffic to FriendBet service
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: friendbet
+    ports:
+    - protocol: TCP
+      port: 8090
+
+  # Allow traffic to Cloudflare edge
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53

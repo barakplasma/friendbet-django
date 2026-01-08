@@ -1,0 +1,134 @@
+# Default values for FriendBet
+replicaCount: 1
+
+image:
+  repository: friendbet
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  type: ClusterIP
+  port: 8090
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: friendbet.526462738.xyz
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: friendbet-tls
+      hosts:
+        - friendbet.526462738.xyz
+
+persistence:
+  enabled: true
+  storageClass: "standard"
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  # Existing claim name (if using existing PVC)
+  # existingClaim: ""
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - friendbet
+        topologyKey: kubernetes.io/hostname
+
+# PocketBase configuration
+pocketbase:
+  # Server configuration
+  logLevel: "info"
+  # Admin user creation (optional - for initial setup only)
+  admin:
+    enabled: false
+    email: "admin@friendbet.local"
+    password: "changeme"
+  # OAuth providers (configure via PocketBase admin UI)
+  oauth:
+    enabled: true
+    providers:
+      - google
+      - github
+      - microsoft
+
+# Monitoring and observability
+monitoring:
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+  prometheusRules:
+    enabled: false
+
+# Backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: 7
+  # Backup to PVC (default) or S3-compatible storage
+  destination: "pvc"
+  # S3 configuration (if destination = "s3")
+  s3:
+    endpoint: ""
+    bucket: ""
+    accessKey: ""
+    secretKey: ""

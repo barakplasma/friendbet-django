@@ -1,0 +1,50 @@
+# FriendBet Cloudflare Tunnel Configuration
+# This configuration should be added to your existing Cloudflare Tunnel setup
+#
+# Add this ingress rule to your tunnel's config.yml or use cloudflare tunnel CLI
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: friendbet-tunnel-config
+  namespace: cloudflare-tunnel  # Adjust to your tunnel namespace
+data:
+  config.yml: |
+    tunnel: <your-tunnel-id>
+    credentials-file: /root/.cloudflared/<tunnel-id>.json
+
+    ingress:
+      # FriendBet application
+      - hostname: friendbet.yourdomain.com  # Replace with your domain
+        service: http://localhost:8090
+        path: /
+      - hostname: friendbet.yourdomain.com  # Replace with your domain
+        service: http://localhost:8090
+        path: /_/  # PocketBase admin UI
+      - hostname: friendbet.yourdomain.com  # Replace with your domain
+        service: http://localhost:8090
+        path: /api/  # API endpoint
+
+      # Your existing ingress rules...
+      # Add other services before the final catch-all
+
+      # Final catch-all (your existing configuration)
+      - service: http_status:404
+
+---
+# Alternative: Using cloudflare tunnel CLI commands
+# Add these rules to your existing tunnel:
+
+# 1. Add FriendBet hostname to existing tunnel:
+#    cloudflare tunnel route dns <tunnel-id> friendbet.yourdomain.com
+
+# 2. Configure ingress rules:
+#    cloudflare tunnel ingress rule add \
+#      --hostname friendbet.yourdomain.com \
+#      --service http://localhost:8090
+
+# 3. For Cloudflare Access protection (recommended):
+#    Create an Access policy in Cloudflare dashboard to protect friendbet.yourdomain.com
+#    - Email domain: Restrict to your organization's domain
+#    - OR: Email specific users who should have access
+#    - OR: Use Auth (Google, GitHub, etc.) for additional authentication

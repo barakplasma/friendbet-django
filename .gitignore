@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+bower_components/
+
+# Build outputs
+dist/
+build/
+*.log
+
+# PocketBase
+backend/pb_data/
+backend/pb_public/
+backend/pb_logs/
+backend/pocketbase
+backend/pocketbase_*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Angular
+frontend/angular/src/app/
+frontend/angular/.angular/
+frontend/angular/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
