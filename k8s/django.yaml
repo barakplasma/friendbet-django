@@ -15,9 +15,12 @@ spec:
       labels:
         app: django
     spec:
+      imagePullSecrets:
+      - name: ghcr-auth
       initContainers:
       - name: migrate
-        image: friendbet:latest
+        image: ghcr.io/YOUR_GITHUB_USERNAME/toto:latest
+        imagePullPolicy: Always
         command: ["python", "manage.py", "migrate", "--noinput"]
         env:
         - name: POSTGRES_DB
@@ -62,7 +65,8 @@ spec:
               key: DJANGO_DEBUG
       containers:
       - name: django
-        image: friendbet:latest
+        image: ghcr.io/YOUR_GITHUB_USERNAME/toto:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:

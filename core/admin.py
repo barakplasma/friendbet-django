@@ -4,8 +4,8 @@ from .models import User, Group, GroupMembership, InviteCode, Market, Bet, Trans
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['username', 'email', 'preferred_language', 'oauth_provider', 'is_staff']
-    list_filter = ['preferred_language', 'oauth_provider', 'is_staff']
+    list_display = ['username', 'email', 'preferred_language', 'is_staff']
+    list_filter = ['preferred_language', 'is_staff']
     search_fields = ['username', 'email']
 
 

@@ -21,12 +21,6 @@ class User(AbstractUser):
         null=True,
         verbose_name=_("Avatar")
     )
-    oauth_provider = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name=_("OAuth Provider")
-    )
 
     class Meta:
         verbose_name = _("User")
