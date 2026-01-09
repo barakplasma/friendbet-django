@@ -26,64 +26,39 @@ jobs:
     strategy:
       matrix:
         platform: [linux/amd64, linux/arm64]
-    container:
-      image: quay.io/buildah/stable
-      options: --user root
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up containerd for image storage
-        run: |
-          mkdir -p /var/lib/containers
-          chmod -R 777 /var/lib/containers
-
-      - name: Configure buildah to use containerd
-        run: |
-          echo "export BUILDAH_ISOLATION=chroot" >> /etc/environment
-          echo "export STORAGE_DRIVER=vfs" >> /etc/environment
-
       - name: Log in to GitHub Container Registry
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | buildah login -u "${{ github.actor }}" --password-stdin ghcr.io
-
-      - name: Set up image tags
-        id: tags
-        run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          TAGS="${IMAGE}:${{ github.sha }}"
-          TAGS="${TAGS},${IMAGE}:${{ github.ref_name }}"
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            TAGS="${TAGS},${IMAGE}:latest"
-          fi
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build image with buildah
-        run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          buildah bud \
-            --file ./Dockerfile.build \
-            --platform ${{ matrix.platform }} \
-            --tag "${IMAGE}:${{ github.sha }}" \
-            --tag "${IMAGE}:${{ github.ref_name }}" \
-            .
-
-      - name: Push images to GHCR
-        run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          buildah push "${IMAGE}:${{ github.sha }}"
-          buildah push "${IMAGE}:${{ github.ref_name }}"
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            buildah push "${IMAGE}:latest"
-          fi
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ github.sha }} ${{ github.ref_name }} latest
+          containerfiles: ./Dockerfile.build
+          platforms: ${{ matrix.platform }}
+          push: true
+          registry: ghcr.io
+          extra-args: |
+            --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}"
+            --label "org.opencontainers.image.revision=${{ github.sha }}"
 
       - name: Generate deployment summary
         run: |
           echo "## 🚀 Deployment Summary for ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Platform:** ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
-          echo "**OCI Tool:** Buildah" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Tags:** ${{ steps.tags.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "**OCI Tool:** Buildah (Red Hat Actions)" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ghcr.io/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:** ${{ github.sha }}, ${{ github.ref_name }}, latest" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Digest:** ${{ steps.build-image.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
