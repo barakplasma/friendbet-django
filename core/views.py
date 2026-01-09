@@ -9,13 +9,10 @@ from django import forms
 
 
 class CustomUserCreationForm(UserCreationForm):
-    class Meta(UserCreationForm.Meta):
-        model = None  
-        
     def __init__(self, *args, **kwargs):
         from core.models import User
-        self.Meta.model = User
         super().__init__(*args, **kwargs)
+        self._meta.model = User
 
 
 class CustomLoginView(LoginView):
