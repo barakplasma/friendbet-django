@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY . /app
 
 # Collect static files
-RUN uv pip run --system python manage.py collectstatic --noinput
+RUN uv run python manage.py collectstatic --noinput
 
 # Final stage without UV (smaller image)
 FROM python:3.11-slim
