@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django
+  namespace: friendbet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      initContainers:
+      - name: migrate
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            cd /app
+            pip install --no-cache-dir django==4.2.17 psycopg2-binary==2.9.9 social-auth-app-django==5.4.3 gunicorn==21.2.0 pillow==10.4.0
+            python manage.py migrate --noinput
+        env:
+        - name: POSTGRES_DB
+          value: "friendbet"
+        - name: POSTGRES_USER
+          value: "friendbet"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_HOST
+          value: "postgres-service"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: DJANGO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: django-secret
+              key: DJANGO_SECRET_KEY
+        - name: DJANGO_ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: django-config
+              key: DJANGO_ALLOWED_HOSTS
+        - name: DJANGO_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: django-config
+              key: DJANGO_DEBUG
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+      containers:
+      - name: django
+        image: python:3.11-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            cd /app
+            pip install --no-cache-dir django==4.2.17 psycopg2-binary==2.9.9 social-auth-app-django==5.4.3 gunicorn==21.2.0 pillow==10.4.0
+            gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --threads 4
+        ports:
+        - containerPort: 8000
+        env:
+        - name: POSTGRES_DB
+          value: "friendbet"
+        - name: POSTGRES_USER
+          value: "friendbet"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_HOST
+          value: "postgres-service"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: DJANGO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: django-secret
+              key: DJANGO_SECRET_KEY
+        - name: DJANGO_ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: django-config
+              key: DJANGO_ALLOWED_HOSTS
+        - name: DJANGO_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: django-config
+              key: DJANGO_DEBUG
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+        - name: media-storage
+          mountPath: /app/media
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: app-code
+        hostPath:
+          path: /root/toto
+          type: Directory
+      - name: media-storage
+        emptyDir: {}
