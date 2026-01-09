@@ -30,9 +30,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -52,8 +49,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
-          flavor: |
-            suffix=${{ matrix.platform == 'linux/amd64' && '' || '-' }}${{ matrix.platform == 'linux/amd64' && '' || matrix.platform == 'linux/arm64' && 'arm64' || 'unknown' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -65,7 +60,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=buildkit-${{ matrix.platform }}
           cache-to: type=gha,scope=buildkit-${{ matrix.platform }},mode=max
-          platforms: ${{ matrix.platform }}
           provenance: false
           sbom: false
 
@@ -74,6 +68,8 @@ jobs:
           echo "## 🚀 Deployment Summary for ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Platform:** ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Runner:** ${{ runner.os }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Architecture:** ${{ runner.arch }}" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:** ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
