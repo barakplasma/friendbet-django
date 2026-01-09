@@ -19,7 +19,7 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform == 'linux/amd64' && 'ubuntu-latest' || 'ubuntu-latest-arm64' }}
     permissions:
       contents: read
       packages: write
@@ -52,6 +52,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
+          flavor: |
+            suffix=${{ matrix.platform == 'linux/amd64' && '' || '-' }}${{ matrix.platform == 'linux/amd64' && '' || matrix.platform == 'linux/arm64' && 'arm64' || 'unknown' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
