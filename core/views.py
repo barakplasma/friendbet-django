@@ -3,6 +3,7 @@ from django.contrib.auth import logout, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
+from django.views.decorators.csrf import csrf_exempt
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -30,7 +31,8 @@ def signup_view(request):
 
 
 def logout_view(request):
-    logout(request)
+    from django.contrib.auth import logout as auth_logout
+    auth_logout(request)
     return redirect('login')
 
 
@@ -39,6 +41,7 @@ def dashboard(request):
     return render(request, 'dashboard.html')
 
 
+@csrf_exempt
 def set_language(request, lang_code):
     from django.utils.translation import activate
     from django.http import HttpResponseRedirect

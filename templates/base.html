@@ -5,6 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% translate "FriendBet - Private Prediction Markets" %}</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    {% csrf_token %}
+    <script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Setup CSRF protection for fetch requests
+    if (typeof fetch !== 'undefined') {
+        const originalFetch = fetch;
+        fetch = function(url, options = {}) {
+            if (!options.headers) {
+                options.headers = {};
+            }
+            if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+                options.headers['X-CSRFToken'] = csrftoken;
+            }
+            return originalFetch(url, options);
+        };
+    }
+
+    // Setup CSRF protection for XMLHttpRequest
+    if (typeof XMLHttpRequest !== 'undefined') {
+        const originalOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url) {
+            originalOpen.apply(this, arguments);
+            if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase())) {
+                this.setRequestHeader('X-CSRFToken', csrftoken);
+            }
+        };
+    }
+    </script>
 </head>
 <body>
     <nav class="navbar">
