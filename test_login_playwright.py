@@ -47,7 +47,7 @@ async def test_login():
                     if elements:
                         found_elements.extend([(selector, len(elements))])
                         logger.info(f"Found {len(elements)} elements matching: {selector}")
-                except Exception as e:
+                except Exception:
                     pass
             
             if not found_elements:

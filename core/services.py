@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
-from .models import Market, Bet, Transaction, GroupMembership
+from .models import Bet, Transaction, GroupMembership
 
 
 class AMMCalculator:
@@ -85,7 +85,6 @@ class MarketService:
             raise ValueError("Insufficient points")
 
         # Get or create AMM for this market and deadline
-        amm_key = f"{market.id}_{deadline_date}_{outcome}"
         # In a real implementation, you'd store the AMM state in the database
         amm = AMMCalculator()
 

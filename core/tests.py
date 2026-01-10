@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from core.models import Group, GroupMembership, Market, Bet, Transaction, InviteCode
-from core.services import AMMCalculator, MarketService, PointsService
+from core.models import Group, GroupMembership, Market, InviteCode
+from core.services import AMMCalculator, PointsService
 
 
 class AMMTestCase(TestCase):
