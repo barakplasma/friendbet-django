@@ -1,7 +1,18 @@
 name: fmt
 
 on:
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+      - django-mvp
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - django-mvp
+  workflow_dispatch:
+
 
 permissions:
     contents: write
